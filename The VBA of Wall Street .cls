@@ -1,0 +1,158 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "ThisWorkbook"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
+Function stock_analysis()
+
+' Assign lable to columns
+Range("J1").Value = "Ticker"
+Range("K1").Value = "Yearly Change"
+Range("L1").Value = "Percent Change"
+Range("M1").Value = "Total Stock Volume"
+Range("K1").ColumnWidth = 15
+Range("L1").ColumnWidth = 15
+Range("M1").ColumnWidth = 18
+
+Range("P1").ColumnWidth = 25
+Range("Q1").Value = "Ticker"
+Range("R1").Value = "Value"
+Range("P2").Value = "Greatest % Increase"
+Range("P3").Value = "Greatest % Decrease"
+Range("P4").Value = "Greatest Total Value"
+
+
+
+' Assign value for variables to begin looping
+mticker1 = Range("A2").Value
+mticker2 = Range("A2").Value
+mticker_min = ""
+mticker_max = ""
+mtickervol_max = ""
+mstockvol_max = 0
+ptchange_min = 0
+ptchange_max = 0
+
+mstockvol = 0
+openval = Range("C2").Value
+closeval = Range("F2").Value
+
+row_count = 2
+row_r = 1
+
+
+'Range("K2", "K10").Interior.ColorIndex = 1
+yrchange_max = 0
+yrchange_min = 0
+
+' counting total number of row in the active worksheet
+row_count = ActiveSheet.Cells(Rows.Count, 1).End(xlUp).Row
+
+For i = 2 To row_count
+    mticker2 = Cells(i + 1, 1).Value
+    mstockvol = mstockvol + Cells(i, 7).Value
+    
+    ' compare current ticker with the next ticker
+    If mticker1 <> mticker2 Then
+    
+        row_r = row_r + 1
+        closeval = Cells(i, 6).Value
+        yrchange = closeval - openval
+        If openval <> 0 Then
+            ptchange = yrchange / openval
+        End If
+                 
+        ' assign results (ticker, yearly change, percent change, total volume)
+        ' for each ticker
+        
+        Cells(row_r, 10).Value = mticker1
+        Cells(row_r, 11).Value = yrchange
+        Cells(row_r, 12).NumberFormat = "0.00%"
+        Cells(row_r, 12).Value = ptchange
+        Cells(row_r, 13).NumberFormat = "0,0"
+        Cells(row_r, 13).Value = mstockvol
+        
+        ' conditional format for negative or positive change
+        If yrchange > 0 Then
+            Cells(row_r, 11).Interior.ColorIndex = 4
+        Else
+            Cells(row_r, 11).Interior.ColorIndex = 3
+        End If
+        
+        ' catching the greatest increase & decrease and respective tickers
+        If ptchange_min > ptchange Then
+            ptchange_min = ptchange
+            mticker_min = mticker1
+        ElseIf ptchange_max < ptchange Then
+            ptchange_max = ptchange
+            mticker_max = mticker1
+        End If
+        
+        ' catching the greatest Total value and ticker
+        If mstockvol_max < mstockvol Then
+            mstockvol_max = mstockvol
+            mtickervol_max = mticker1
+        End If
+        
+        ' re-assign open & close value of a ticker
+        openval = Cells(i + 1, 3).Value
+        closeval = Cells(i + 1, 3).Value
+        
+        ' assign next ticker value for the next looping condition
+        mticker1 = mticker2
+        mstockvol = 0
+    End If
+    
+Next i
+
+    ' publish the result of greatest increase, decrease and value
+    Range("Q2").Value = mticker_max
+    Range("Q3").Value = mticker_min
+    Range("Q4").Value = mtickervol_max
+    Range("R2").NumberFormat = "0.00%"
+    Range("R2").Value = ptchange_max
+    Range("R3").Value = ptchange_min
+    Range("R4").Value = mstockvol_max
+
+End Function
+
+Sub mainvba()
+
+' Declare variable for the loop to move between active sheet
+Dim i As Double
+Dim wscount As Integer
+Dim nws As Integer
+
+
+
+' Declare variable for stock_analysis function
+
+Dim row_count As Double, row_r As Double
+Dim yrchange As Double
+Dim ptchange_min As Double, ptchange_max As Double
+Dim ptchange As Double
+Dim openval As Double, closeval As Double
+
+Dim mstockvol As Double
+Dim mstockvol_max As Double
+
+Dim mticker1 As String, mticker2 As String
+Dim mticker_min As String, mticker_max As String
+Dim mticker_maxvol As String
+
+
+' counting number of worksheets
+wscount = Worksheets.Count
+
+For nws = 1 To wscount
+
+    Worksheets(nws).Activate
+    Call stock_analysis
+    
+Next nws
+
+End Sub
